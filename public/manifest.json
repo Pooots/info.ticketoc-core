@@ -1,0 +1,26 @@
+{
+  "short_name": "Ticketoc",
+  "name": "Ticketoc - Your Gateway to Experiences",
+  "description": "One platform for all your ticketing needs. Events, adventures, dining, travel, and more.",
+  "icons": [
+    {
+      "src": "images/favicon_dark.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#fbbf24",
+  "background_color": "#ffffff"
+}

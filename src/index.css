@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply transition-colors duration-200;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .dark .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+  }
+
+  /* Hero: Enhanced grid with accent lines */
+  .bg-hero-grid {
+    background-image:
+      linear-gradient(to right, rgba(251, 191, 36, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(251, 191, 36, 0.03) 1px, transparent 1px),
+      linear-gradient(135deg, rgba(251, 191, 36, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px, 60px 60px, 120px 120px;
+  }
+
+  .dark .bg-hero-grid {
+    background-image:
+      linear-gradient(to right, rgba(251, 191, 36, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(251, 191, 36, 0.05) 1px, transparent 1px),
+      linear-gradient(135deg, rgba(251, 191, 36, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px, 60px 60px, 120px 120px;
+  }
+
+  /* Video frame glow */
+  .video-frame-glow {
+    box-shadow:
+      0 0 20px rgba(251, 191, 36, 0.25),
+      0 0 60px rgba(249, 115, 22, 0.15),
+      inset 0 0 60px rgba(251, 191, 36, 0.03);
+  }
+
+  .hero-badge-glow {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+  }
+}
