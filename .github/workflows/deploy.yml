@@ -1,0 +1,102 @@
+# Website front end: checks on every push and pull request; deploys or rolls back only when started by
+# hand (Actions → Site → Run workflow) and approved through the "production" environment.
+# Installed from the CMS deployment kit (deploy/site-kit/deploy.yml); see the kit README for setup.
+#
+# Environment "production" (Settings → Environments), with required reviewers:
+#   variables  VITE_CMS_API_URL, VITE_CMS_SITE_KEY, VITE_CMS_TENANT_DOMAIN,
+#              DEPLOY_TARGET (user@host), DEPLOY_PATH (e.g. /srv/sites/bhenti), SITE_URL (smoke check)
+#   secrets    DEPLOY_SSH_KEY (private key of the deploy user), DEPLOY_KNOWN_HOSTS (ssh-keyscan output)
+name: Site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do on the server
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build
+        if: inputs.action == 'deploy'
+        id: build
+        env:
+          VITE_CMS_API_URL: ${{ vars.VITE_CMS_API_URL }}
+          VITE_CMS_SITE_KEY: ${{ vars.VITE_CMS_SITE_KEY }}
+          VITE_CMS_TENANT_DOMAIN: ${{ vars.VITE_CMS_TENANT_DOMAIN }}
+        run: |
+          set -o pipefail
+          bash deploy/build.sh | tee build.log
+          echo "archive=$(tail -n 1 build.log)" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the release archive
+        if: inputs.action == 'deploy'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: ${{ steps.build.outputs.archive }}
+          retention-days: 30
+
+      - name: SSH access
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
+
+      - name: Release
+        env:
+          ACTION: ${{ inputs.action }}
+          ARCHIVE: ${{ steps.build.outputs.archive }}
+          DEPLOY_TARGET: ${{ vars.DEPLOY_TARGET }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          SMOKE_URL: ${{ vars.SITE_URL }}
+        run: |
+          export SSH_KEY="$HOME/.ssh/deploy_key" SSH_KNOWN_HOSTS="$HOME/.ssh/deploy_known_hosts"
+          if [ "$ACTION" = rollback ]; then
+            bash deploy/release.sh --rollback "$DEPLOY_TARGET" "$DEPLOY_PATH"
+          else
+            bash deploy/release.sh "$ARCHIVE" "$DEPLOY_TARGET" "$DEPLOY_PATH"
+          fi
+
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/deploy_known_hosts

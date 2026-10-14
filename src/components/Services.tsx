@@ -8,9 +8,9 @@ const Services = () => {
       features: ['Concerts & Music Festivals', 'Business Conferences', 'Workshops & Seminars', 'Award Shows']
     },
     {
-      id: 'fun',
+      id: 'explore',
       icon: '🎢',
-      title: 'Ticketoc Fun',
+      title: 'Ticketoc Explore',
       description: 'Discover thrilling activities and adventures for every age. From theme parks to escape rooms and beyond.',
       features: ['Theme Parks & Attractions', 'Adventure Sports', 'Escape Rooms', 'Family Entertainment']
     },

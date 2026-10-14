@@ -38,7 +38,7 @@ const Footer = () => {
           <div>
             <h3 className="text-white font-bold mb-4">Our Services</h3>
             <ul className="space-y-2">
-              {['Ticketoc Events', 'Ticketoc Fun', 'Ticketoc Life', 'Ticketoc Eats', 'Ticketoc Travels', 'Ticketoc Stay'].map((service) => (
+              {['Ticketoc Events', 'Ticketoc Explore', 'Ticketoc Life', 'Ticketoc Eats', 'Ticketoc Travels', 'Ticketoc Stay'].map((service) => (
                 <li key={service}>
                   <a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors">
                     {service}

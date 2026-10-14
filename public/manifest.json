@@ -4,19 +4,14 @@
   "description": "One platform for all your ticketing needs. Events, adventures, dining, travel, and more.",
   "icons": [
     {
-      "src": "images/favicon_dark.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "src": "favicon.ico",
+      "sizes": "48x48 32x32 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "ticketoc_thumbnail.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "362x362"
     }
   ],
   "start_url": ".",
