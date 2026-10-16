@@ -131,9 +131,24 @@ function rememberVisitorId(id: string): void {
   writeVisitorCookie(normalized);
 }
 
-function isTicketocHost(host: string): boolean {
-  const h = host.toLowerCase();
-  return h === 'ticketoc.com' || h.endsWith('.ticketoc.com') || h === 'localhost' || h === '127.0.0.1';
+/**
+ * Destinations that should carry campaign attribution.
+ * Includes production (ticketoc.com), Vercel staging (ticketoc.vercel.app), and local.
+ * Also treats /organizer/registration paths as Ticketoc even on unknown preview hosts.
+ */
+function isTicketocDestination(url: URL): boolean {
+  const h = url.hostname.toLowerCase();
+  if (
+    h === 'ticketoc.com' ||
+    h.endsWith('.ticketoc.com') ||
+    h === 'ticketoc.vercel.app' ||
+    h.endsWith('.ticketoc.vercel.app') ||
+    h === 'localhost' ||
+    h === '127.0.0.1'
+  ) {
+    return true;
+  }
+  return /\/organizer\/registration\/?$/.test(url.pathname);
 }
 
 /** Append `source` and add this site as a `via` hop on outbound Ticketoc URLs. */
@@ -146,8 +161,9 @@ export function appendAttributionToUrl(
   try {
     const url = new URL(href, window.location.origin);
     if (!/^https?:$/.test(url.protocol)) return href;
-    if (!isTicketocHost(url.hostname)) return href;
+    if (!isTicketocDestination(url)) return href;
 
+    // Always overwrite CMS-baked ?source=… with the live campaign source.
     url.searchParams.set('source', ctx.source);
     const nextVia = [...ctx.via.filter((v) => v !== hop), hop];
     url.searchParams.delete('via');
@@ -163,7 +179,7 @@ export function isAttributedOutboundHref(href: string): boolean {
   if (!getAttributionContext()?.source) return false;
   try {
     const url = new URL(href, window.location.origin);
-    return isTicketocHost(url.hostname) && url.origin !== window.location.origin;
+    return isTicketocDestination(url) && url.origin !== window.location.origin;
   } catch {
     return false;
   }
