@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { appendAttributionToUrl, isAttributedOutboundHref } from "../attribution";
 import type { LinkValue, MediaValue } from "../types";
 import { cn, resolveUrl } from "./utils";
 import { sanitizeHtml } from "./sanitize";
@@ -8,6 +9,8 @@ export interface RenderOptions {
   baseUrl: string | null;
   /** Client-side navigation for same-origin links (full page loads when omitted). */
   navigate?: (path: string) => void;
+  /** Fired when the visitor clicks an outbound Ticketoc link that carries attribution. */
+  onAttributedOutboundClick?: (ctaKey: string, href: string) => void;
 }
 
 const RenderContext = createContext<RenderOptions>({ baseUrl: null });
@@ -152,21 +155,37 @@ export function SiteAnchor({
   style?: CSSProperties;
   ariaLabel?: string;
 }) {
-  const { baseUrl, navigate } = useRender();
+  const { baseUrl, navigate, onAttributedOutboundClick } = useRender();
   const resolved = resolveUrl(href ?? undefined, baseUrl) ?? "#";
-  const isHash = resolved.startsWith("#");
+  const attributed = resolved.startsWith("#") ? resolved : appendAttributionToUrl(resolved);
+  const isHash = attributed.startsWith("#");
 
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (isHash) {
       e.preventDefault();
-      if (resolved.length > 1) {
-        document.getElementById(resolved.slice(1))?.scrollIntoView({ behavior: "smooth" });
-        window.history.replaceState(window.history.state, "", resolved);
+      if (attributed.length > 1) {
+        document.getElementById(attributed.slice(1))?.scrollIntoView({ behavior: "smooth" });
+        window.history.replaceState(window.history.state, "", attributed);
       }
       return;
     }
+    if (isAttributedOutboundHref(attributed) && e.button === 0 && !e.defaultPrevented) {
+      const path = (() => {
+        try {
+          return new URL(attributed, window.location.href).pathname;
+        } catch {
+          return "outbound";
+        }
+      })();
+      const ctaKey = path.includes("organizer/registration")
+        ? "become_merchant_partner"
+        : path.includes("register")
+          ? "customer_signup"
+          : "outbound_ticketoc";
+      onAttributedOutboundClick?.(ctaKey, attributed);
+    }
     if (!navigate || newTab || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const url = new URL(resolved, window.location.href);
+    const url = new URL(attributed, window.location.href);
     if (url.origin !== window.location.origin || !/^https?:$/.test(url.protocol)) return;
     e.preventDefault();
     navigate(url.pathname + url.search + url.hash);
@@ -174,7 +193,7 @@ export function SiteAnchor({
 
   return (
     <a
-      href={resolved}
+      href={attributed}
       onClick={onClick}
       className={className}
       style={style}

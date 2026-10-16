@@ -28,3 +28,5 @@ dist-ssr
 
 # release archives from deploy/build.sh
 deploy/out/
+
+.cursor

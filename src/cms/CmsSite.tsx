@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { captureAttributionFromLocation, pageKeyForSlug, trackAttribution } from './attribution';
 import { CmsError, fetchPage, fetchPreview, fetchSite, resolveRoute, type CmsConfig } from './client';
 import { applyPageHead, applyStatusHead } from './head';
 import { SiteRenderer } from './renderer/site-renderer';
@@ -111,6 +112,35 @@ export default function CmsSite({ config }: { config: CmsConfig }) {
     }
   }, [state]);
 
+  useEffect(() => {
+    if (state.status !== 'ready' || state.preview) return;
+    const ctx = captureAttributionFromLocation(location.search);
+    if (!ctx?.source) return;
+
+    const controller = new AbortController();
+    void trackAttribution({
+      config,
+      eventType: 'land',
+      pageKey: pageKeyForSlug(state.page.slug, state.page.is_home),
+      pageUrl: window.location.href,
+      signal: controller.signal,
+    });
+    return () => controller.abort();
+  }, [config, location.search, state]);
+
+  const onAttributedOutboundClick = useCallback(
+    (ctaKey: string) => {
+      if (state.status !== 'ready' || state.preview) return;
+      void trackAttribution({
+        config,
+        eventType: 'click',
+        pageKey: pageKeyForSlug(state.page.slug, state.page.is_home),
+        ctaKey,
+      });
+    },
+    [config, state],
+  );
+
   if (state.status === 'loading') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center" role="status" aria-live="polite">
@@ -179,7 +209,11 @@ export default function CmsSite({ config }: { config: CmsConfig }) {
         site={site}
         sections={page.sections}
         settings={page.settings}
-        options={{ baseUrl: null, navigate: preview ? undefined : navigate }}
+        options={{
+          baseUrl: null,
+          navigate: preview ? undefined : navigate,
+          onAttributedOutboundClick: preview ? undefined : onAttributedOutboundClick,
+        }}
         topOffset={preview ? PREVIEW_BANNER_HEIGHT : 0}
       />
     </>

@@ -1,0 +1,21 @@
+# Secrets and environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*service-account*.json
+
+# Dependencies and generated files
+vendor/
+node_modules/
+.git/
+build/
+dist/
+coverage/
+
+# Runtime data and logs
+storage/logs/
+storage/framework/
+bootstrap/cache/
+*.log
